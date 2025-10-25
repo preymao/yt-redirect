@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weiterleitung…</title>
+  <meta name="robots" content="noindex">
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+      background: #f7f7f7;
+    }
+    .box {
+      max-width: 520px;
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+      background: white;
+    }
+    button {
+      padding: 10px 14px;
+      font-size: 16px;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    small {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Du wirst weitergeleitet</h2>
+    <p id="status">Bitte warten…</p>
+    <button id="openInBrowser" style="display:none">Im Browser öffnen</button>
+    <p><small>Wenn nichts passiert: im In-App-Browser auf „Im Browser öffnen“ tippen.</small></p>
+  </div>
+
+  <script>
+    // ----------------- KONFIGURATION -----------------
+    const TARGET_URL = "https://www.youtube.com/@gleggmire";
+    const COUNT_NAMESPACE = "gelgs-gleggmire";
+    const COUNT_KEY = "yt-main";
+    const REDIRECT_DELAY_MS = 150; // 150 ms = schnell + zuverlässig
+    // -------------------------------------------------
+
+    const countApiUrl = `https://api.countapi.xyz/hit/${encodeURIComponent(COUNT_NAMESPACE)}/${encodeURIComponent(COUNT_KEY)}`;
+
+    function tryCountAndRedirect() {
+      // 1) Zählung (Bild-Ping)
+      try {
+        const img = new Image();
+        img.src = countApiUrl + "?_=" + Date.now();
+      } catch(e) {}
+
+      // 2) Zusätzlicher Versuch via fetch
+      try {
+        fetch(countApiUrl, { method: "GET", mode: "no-cors", keepalive: true }).catch(()=>{});
+      } catch(e) {}
+
+      // 3) Redirect nach kurzem Delay
+      setTimeout(() => {
+        window.location.replace(TARGET_URL);
+      }, REDIRECT_DELAY_MS);
+    }
+
+    function showOpenInBrowserButton() {
+      const btn = document.getElementById('openInBrowser');
+      btn.style.display = "inline-block";
+      btn.onclick = () => window.open(TARGET_URL, "_blank", "noopener");
+    }
+
+    window.addEventListener('load', () => {
+      document.getElementById('status').textContent = "Weiterleitung wird gestartet…";
+      tryCountAndRedirect();
+      setTimeout(() => {
+        document.getElementById('status').textContent = "Wenn du nicht weitergeleitet wirst, öffne den Link im Browser.";
+        showOpenInBrowserButton();
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
