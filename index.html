@@ -32,12 +32,17 @@
     small {
       color: #666;
     }
+    #clickCount {
+      margin-top: 10px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <div class="box">
     <h2>Du wirst weitergeleitet</h2>
     <p id="status">Bitte warten…</p>
+    <p id="clickCount">Lade Klickzahl…</p>
     <button id="openInBrowser" style="display:none">Im Browser öffnen</button>
     <p><small>Wenn nichts passiert: im In-App-Browser auf „Im Browser öffnen“ tippen.</small></p>
   </div>
@@ -50,18 +55,19 @@
     const REDIRECT_DELAY_MS = 150; // 150 ms = schnell + zuverlässig
     // -------------------------------------------------
 
-    const countApiUrl = `https://api.countapi.xyz/hit/${encodeURIComponent(COUNT_NAMESPACE)}/${encodeURIComponent(COUNT_KEY)}`;
+    const countHitUrl = `https://api.countapi.xyz/hit/${encodeURIComponent(COUNT_NAMESPACE)}/${encodeURIComponent(COUNT_KEY)}`;
+    const countGetUrl = `https://api.countapi.xyz/get/${encodeURIComponent(COUNT_NAMESPACE)}/${encodeURIComponent(COUNT_KEY)}`;
 
     function tryCountAndRedirect() {
       // 1) Zählung (Bild-Ping)
       try {
         const img = new Image();
-        img.src = countApiUrl + "?_=" + Date.now();
+        img.src = countHitUrl + "?_=" + Date.now();
       } catch(e) {}
 
       // 2) Zusätzlicher Versuch via fetch
       try {
-        fetch(countApiUrl, { method: "GET", mode: "no-cors", keepalive: true }).catch(()=>{});
+        fetch(countHitUrl, { method: "GET", mode: "no-cors", keepalive: true }).catch(()=>{});
       } catch(e) {}
 
       // 3) Redirect nach kurzem Delay
@@ -76,9 +82,22 @@
       btn.onclick = () => window.open(TARGET_URL, "_blank", "noopener");
     }
 
+    function updateClickCount() {
+      fetch(countGetUrl)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('clickCount').textContent = `Bisherige Klicks: ${data.value}`;
+        })
+        .catch(err => {
+          document.getElementById('clickCount').textContent = "Klickzahl konnte nicht geladen werden.";
+          console.error(err);
+        });
+    }
+
     window.addEventListener('load', () => {
       document.getElementById('status').textContent = "Weiterleitung wird gestartet…";
       tryCountAndRedirect();
+      updateClickCount();
       setTimeout(() => {
         document.getElementById('status').textContent = "Wenn du nicht weitergeleitet wirst, öffne den Link im Browser.";
         showOpenInBrowserButton();
